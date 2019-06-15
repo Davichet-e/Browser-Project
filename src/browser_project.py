@@ -1,7 +1,7 @@
 ﻿"""
 Created on 20 ene. 2019
 
-@author: David
+@author: David García Morillo
 """
 import csv
 import datetime as dt
@@ -63,26 +63,6 @@ def read_file(file: str) -> List["Records"]:
             for record in reader
         ]
     return result
-
-
-# def filter_by_importance(data, Filter):
-#     '''
-#         INPUT = Receive a data with a List of tuples with the percentage
-#         of usage of certain browser on certain date and a filter, which
-#         determines the minimum percentage needed to be on the list
-#         OUTPUT = Returns only the browsers with more percentage of usage than the filter
-#     '''
-#     result = []
-#     for Tuple in data:
-#         res = []
-#         for n in Tuple:
-#             if type(n)==float:
-#                 if n>=Filter:
-#                     res.append(n)
-#             else:
-#                 res.append(n)
-#         result.append(res)
-#     return result
 
 
 def filter_by_date(
@@ -234,27 +214,6 @@ def filter_dataframe_by_list_of_browsers(
 
     return data_frame_with_indexes
 
-    # foo = np.array([filter_by_browser(data, Browser)
-    #                 for Browser in list_of_browsers]).reshape(120, 2)
-    # bar = pd.DataFrame(foo, columns=['Dates', 'Records'])
-    # list_ = []
-    # for lev in list(bar['Dates']):
-    #     list_.append(str(lev)[:7])
-    # quax = int(len(bar['Dates'])/len(list_of_browsers))
-    # bar['Dates'] = list_
-    # bar['Browsers'] = list_of_browsers * quax
-    # foobar = list(
-    #     zip(np.array(bar['Dates'].sort_values()), np.array(bar['Browsers'])))
-    # qoo = pd.MultiIndex.from_tuples(foobar)
-    # eggs = pd.DataFrame(bar, index=qoo)
-    # del eggs['Dates']
-    # del eggs['Browsers']
-    # potato = flattener([[filter_by_date_and_browser(data, foo, browser)
-    #                      for browser in list_of_browsers] for foo in eggs.index.levels[0]])
-    # eggs['Records'] = potato
-    # eggs.index.names = ['Dates', 'Browsers']
-    # return eggs
-
 
 def filter_dataframe_by_importance(file: str, filter_: float = 0.0) -> pd.DataFrame:
     """
@@ -335,7 +294,6 @@ def plot_pie_chart(
 
     if circle:
         centre_circle = plt.Circle((0, 0), 0.70, fc="white")
-        # fig = plt.gcf()
         axis = plt.gca()
 
         axis.add_artist(centre_circle)
