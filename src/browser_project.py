@@ -12,13 +12,14 @@ from typing import List, Optional, Tuple
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 
 pd.plotting.register_matplotlib_converters()
 
 plt.style.use("bmh")
 
 
-def namedtuple_fixed(name: str, fields: list) -> namedtuple:
+def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
     """Checks the fields of the namedtuple and changes the invalid ones."""
 
     def starts_with_number(string: str) -> bool:
@@ -26,7 +27,7 @@ def namedtuple_fixed(name: str, fields: list) -> namedtuple:
             return True
         return False
 
-    fields_fixed: list = [
+    fields_fixed: List[str] = [
         field.replace(" ", "_")
         if not starts_with_number(field)
         else f"c{field.replace(' ', '_')}"
@@ -280,9 +281,10 @@ def plot_pie_chart(
     data_filtered: pd.Series = data[data > 1.0]
 
     data_filtered["Other"] = 100 - sum(data_filtered)
+    
     data_filtered.sort_values(ascending=False, inplace=True)
 
-    explodes: tuple = (0.1,) + (0.0,) * (len(data_filtered) - 1)
+    explodes: Tuple[float, ...] = (0.1,) + (0.0,) * (len(data_filtered) - 1)
     plt.pie(
         data_filtered,
         labels=data_filtered.index,
@@ -293,10 +295,10 @@ def plot_pie_chart(
     )
 
     if circle:
-        centre_circle = plt.Circle((0, 0), 0.70, fc="white")
-        axis = plt.gca()
+        centre_circle: plt.Circle = plt.Circle((0, 0), 0.70, fc="white")
+        axes: Axes = plt.gca()
 
-        axis.add_artist(centre_circle)
+        axes.add_artist(centre_circle)
 
     plt.tight_layout()
     plt.show()
