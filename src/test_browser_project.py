@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on 20 ene. 2019
 
@@ -15,18 +14,18 @@ import browser_project
 
 def test_filter_by_date(data) -> None:
     init_date = "2017-09"
-    final_date = "2018-12"
+    final_date = "2018-02"
     result: browser_project.Records = browser_project.filter_by_date(
         data, init_date, final_date
     )
     if init_date is None is final_date:
-        print("Printing all records")
+        print("Printing all records:")
     elif final_date is None:
-        print("Printing records since " + init_date)
+        print(f"Printing records since {init_date}:")
     elif init_date is None:
-        print("Printing records before " + final_date)
+        print(f"Printing records before {final_date}:")
     else:
-        print("Browser records between " + init_date + " and " + final_date + ":")
+        print(f"Browser records between {init_date} and {final_date}:")
     pprint(result)
     print()
 
