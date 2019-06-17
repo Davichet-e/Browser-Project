@@ -7,7 +7,7 @@ import csv
 import datetime as dt
 from collections import namedtuple
 from statistics import mean
-from typing import List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 import pandas as pd
 import seaborn as sns
@@ -47,8 +47,8 @@ def read_file(file: str) -> List["Records"]:
     global Records
 
     with open(file, encoding="UTF-8") as browsers_file:
-        reader = csv.reader(browsers_file)
-        field_names = next(reader)
+        reader: Iterator[List[str]] = csv.reader(browsers_file)
+        field_names: List[str] = next(reader)
         Records = namedtuple_fixed("Record", field_names)
         result: List[Records] = [
             Records(
@@ -131,11 +131,11 @@ def filter_by_browser(data: List[Records], browser: str) -> List[Tuple[dt.date, 
     return [(record.Date, getattr(record, browser)) for record in data]
 
 
-def plot_evolution_browsers_by_dates(
+def plot_evolution_browsers_between_dates(
     data: List[Records],
     list_of_browsers: List[str],
     *,
-    init_date: Optional[str] = None,
+    initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
 ) -> None:
     """
@@ -143,7 +143,7 @@ def plot_evolution_browsers_by_dates(
     If a initial or final date is given, plots the percentages between them,
     otherwise plots all the data
     """
-    data_filtered: List[Records] = filter_by_date(data, init_date, final_date)
+    data_filtered: List[Records] = filter_by_date(data, initial_date, final_date)
 
     percentages: List[List[float]] = []
     dates: List[List[dt.date]] = []
@@ -173,7 +173,12 @@ def plot_evolution_browsers_by_dates(
     plt.legend()
     plt.ylabel("Percentages")
     plt.xlabel("Dates")
-    plt.title("Percentage of use")
+    plt.title(
+        (
+            f"Evolution of browser usage between {dt.datetime.strftime(dates[0][0], '%b-%Y')} "
+            f"and {dt.datetime.strftime(dates[0][-1], '%b-%Y')}"
+        )
+    )
 
     fig = plt.gcf()
     fig.autofmt_xdate()
@@ -194,6 +199,9 @@ def plot_stick_graph(data: List[Records], list_of_browsers: List[str]) -> None:
     ]
 
     sns.barplot(means_of_usage, list_of_browsers, palette="rocket", orient="h")
+
+    plt.title("Average use of browsers")
+
     plt.tight_layout()
     plt.show()
 
@@ -241,11 +249,11 @@ def filter_dataframe_by_importance(file: str, filter_: float = 0.0) -> pd.DataFr
     return data_frame_transposed[data_frame.mean() > filter_]
 
 
-def plot_evolution_browsers_by_dates_with_data_frame(
+def plot_evolution_browsers_between_dates_with_data_frame(
     file: str,
     list_of_browsers: List[str],
     *,
-    init_date: Optional[str] = None,
+    initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
 ) -> None:
     """
@@ -257,23 +265,23 @@ def plot_evolution_browsers_by_dates_with_data_frame(
         file, index_col="Date", usecols=list_of_browsers, parse_dates=True
     )
 
-    if init_date is not None and final_date is not None:
-        init_date: dt.date = dt.datetime.strptime(init_date, "%Y-%m")
-        final_date: dt.date = dt.datetime.strptime(final_date, "%Y-%m")
+    if initial_date is not None and final_date is not None:
+        _initial_date: dt.date = dt.datetime.strptime(initial_date, "%Y-%m")
+        _final_date: dt.date = dt.datetime.strptime(final_date, "%Y-%m")
 
         data_frame = data_frame[
-            (init_date <= data_frame.index) & (data_frame.index <= final_date)
+            (_initial_date <= data_frame.index) & (data_frame.index <= _final_date)
         ]
 
-    elif init_date is not None:
-        init_date: dt.date = dt.datetime.strptime(init_date, "%Y-%m")
+    elif initial_date is not None:
+        _initial_date = dt.datetime.strptime(initial_date, "%Y-%m")
 
-        data_frame = data_frame[init_date <= data_frame.index]
+        data_frame = data_frame[_initial_date <= data_frame.index]
 
     elif final_date is not None:
-        final_date: dt.date = dt.datetime.strptime(final_date, "%Y-%m")
+        _final_date = dt.datetime.strptime(final_date, "%Y-%m")
 
-        data_frame = data_frame[data_frame.index <= final_date]
+        data_frame = data_frame[data_frame.index <= _final_date]
 
     data_frame.plot(
         legend=True,
@@ -290,6 +298,12 @@ def plot_evolution_browsers_by_dates_with_data_frame(
             data_frame.index, data_frame[browser], alpha=0.3, interpolate=True
         )
 
+    plt.title(
+        (
+            f"Evolution of browser usage between {dt.datetime.strftime(data_frame.index[0], '%b, %Y')} "
+            f"and {dt.datetime.strftime(data_frame.index[-1], '%b, %Y')}"
+        )
+    )
     plt.xlabel("Dates")
     plt.ylabel("Percentage of use")
 
