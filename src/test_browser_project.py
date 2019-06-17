@@ -13,19 +13,19 @@ import browser_project
 
 
 def test_filter_by_date(data) -> None:
-    init_date = "2017-09"
+    initial_date = "2017-09"
     final_date = "2018-02"
     result: browser_project.Records = browser_project.filter_by_date(
-        data, init_date, final_date
+        data, initial_date, final_date
     )
-    if init_date is None is final_date:
+    if initial_date is None is final_date:
         print("Printing all records:")
     elif final_date is None:
-        print(f"Printing records since {init_date}:")
-    elif init_date is None:
+        print(f"Printing records since {initial_date}:")
+    elif initial_date is None:
         print(f"Printing records before {final_date}:")
     else:
-        print(f"Browser records between {init_date} and {final_date}:")
+        print(f"Browser records between {initial_date} and {final_date}:")
     pprint(result)
     print()
 
@@ -67,7 +67,7 @@ def test_filter_data_frame_by_importance(data, filter_) -> None:
         data, filter_
     )
     print(
-        f"Printing the DataFrame with the browsers which mean is greater than {filter_}"
+        f"Printing the DataFrame with the browsers which mean is greater than {filter_}\n"
     )
     print(data_frame)
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     FILE_2017_to_2018 = "./data/browser-ww-monthly-201701-201812.csv"
 
     records: List[browser_project.Records] = browser_project.read_file(
-        FILE_2017_to_2018
+        FILE_2009_to_2019
     )
 
     pprint(records[:5])
@@ -97,8 +97,8 @@ if __name__ == "__main__":
 
     test_filter_by_browser(records)
 
-    browser_project.plot_graph_browser(
-        records, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
+    browser_project.plot_evolution_browsers_between_dates(
+        records, ["Chrome", "Firefox", "Edge", "Safari", "IE"], initial_date="2013-05"
     )
 
     browser_project.plot_stick_graph(
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     test_filter_data_frame_by_importance(FILE_2009_to_2019, 5.0)
 
-    browser_project.plot_evolution_browsers(
+    browser_project.plot_evolution_browsers_between_dates_with_data_frame(
         FILE_2009_to_2019, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
     )
 
