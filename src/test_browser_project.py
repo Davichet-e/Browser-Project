@@ -15,7 +15,7 @@ import browser_project
 def test_filter_by_date(data) -> None:
     initial_date = "2017-09"
     final_date = "2018-02"
-    result: browser_project.Records = browser_project.filter_by_date(
+    result: browser_project.Record = browser_project.filter_by_date(
         data, initial_date, final_date
     )
     if initial_date is None is final_date:
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     FILE_2009_to_2019 = "./data/browser-ww-monthly-200901-201902.csv"
     FILE_2017_to_2018 = "./data/browser-ww-monthly-201701-201812.csv"
 
-    records: List[browser_project.Records] = browser_project.read_file(
+    records: List[browser_project.Record] = browser_project.read_file(
         FILE_2009_to_2019
     )
 

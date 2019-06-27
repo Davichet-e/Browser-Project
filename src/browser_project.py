@@ -1,12 +1,12 @@
 ﻿"""
-Created on 20 ene. 2019
+Created on 20 Jan, 2019
 
 @author: David García Morillo
 """
 import csv
 import datetime as dt
 from collections import namedtuple
-from statistics import mean
+import numpy as np
 from typing import Iterator, List, Optional, Tuple
 
 import pandas as pd
@@ -20,38 +20,37 @@ plt.style.use("bmh")
 
 
 def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
-    """Checks the fields of the namedtuple and changes the invalid ones."""
+    """Check the fields of the namedtuple and changes the invalid ones."""
 
     def starts_with_number(string: str) -> bool:
         if string[0].isdigit():
             return True
         return False
 
-    fields_fixed: List[str] = [
-        field.replace(" ", "_")
-        if not starts_with_number(field)
-        else f"c{field.replace(' ', '_')}"
-        for field in fields
-    ]
+    fields_fixed: List[str] = []
+    for field in fields:
+        field = field.replace(" ", "_")
+        if starts_with_number(field):
+            field = f"c{field}"
+        fields_fixed.append(field)
 
     return namedtuple(name, fields_fixed)
 
 
-Records: namedtuple = None
+Record: namedtuple = namedtuple("Empty_namedtuple", "abc")
 
 
-def read_file(file: str) -> List["Records"]:
+def read_file(file: str) -> List["Record"]:
     """
     Read the file with info about the percentage of use of various browsers
     """
-    global Records
-
+    global Record
     with open(file, encoding="UTF-8") as browsers_file:
         reader: Iterator[List[str]] = csv.reader(browsers_file)
         field_names: List[str] = next(reader)
-        Records = namedtuple_fixed("Record", field_names)
-        result: List[Records] = [
-            Records(
+        Record = namedtuple_fixed("Record", field_names)
+        result: List[Record] = [
+            Record(
                 *[
                     dt.datetime.strptime(n, "%Y-%m").date()
                     if record.index(n) == 0
@@ -65,10 +64,10 @@ def read_file(file: str) -> List["Records"]:
 
 
 def filter_by_date(
-    data: List[Records],
+    data: List[Record],
     initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
-) -> List[Records]:
+) -> List[Record]:
     """
         INPUT = data: list of tuples with the percentage of use
         of certain browsers, on a certain date
@@ -76,26 +75,9 @@ def filter_by_date(
         final_date: Final date
         OUTPUT = LIst of tuples with the browsers between these dates
     """
-    result: List[Records]
+    result: List[Record] = data
 
-    if initial_date is None is final_date:
-        result = data
-
-    elif initial_date is None:
-        result = [
-            n
-            for n in data
-            if n.Date <= dt.datetime.strptime(final_date, "%Y-%m").date()
-        ]
-
-    elif final_date is None:
-        result = [
-            n
-            for n in data
-            if dt.datetime.strptime(initial_date, "%Y-%m").date() <= n.Date
-        ]
-
-    else:
+    if initial_date is not None and final_date is not None:
         result = [
             n
             for n in data
@@ -104,14 +86,28 @@ def filter_by_date(
             <= dt.datetime.strptime(final_date, "%Y-%m").date()
         ]
 
+    elif initial_date is not None:
+        result = [
+            n
+            for n in data
+            if n.Date <= dt.datetime.strptime(initial_date, "%Y-%m").date()
+        ]
+
+    elif final_date is not None:
+        result = [
+            n
+            for n in data
+            if dt.datetime.strptime(final_date, "%Y-%m").date() <= n.Date
+        ]
+
     return result
 
 
 def filter_by_date_and_browser(
-    data: List[Records], date: str, browser: str
+    data: List[Record], date: str, browser: str
 ) -> Optional[float]:
     """
-    Returns the percentage of use of a browser in a date given as parameter
+    Return the percentage of use of a browser in a date given as parameter
     """
     for record in data:
         if dt.datetime.strptime(date, "%Y-%m").date() == record.Date:
@@ -120,30 +116,28 @@ def filter_by_date_and_browser(
     return None
 
 
-def filter_by_browser(data: List[Records], browser: str) -> List[Tuple[dt.date, float]]:
+def filter_by_browser(data: List[Record], browser: str) -> List[Tuple[dt.date, float]]:
     """
-    INPUT = data: list of tuples with the percentage of use
-    of certain browsers, on a certain date
-    Browser: the name of a browser
-    OUTPUT = a list of tuples with the percentage of use of the browser and the dates
+    Return a list with the percentages of use of a browser 
+    given as a parameter along with its corresponding dates 
     """
 
     return [(record.Date, getattr(record, browser)) for record in data]
 
 
 def plot_evolution_browsers_between_dates(
-    data: List[Records],
+    data: List[Record],
     list_of_browsers: List[str],
     *,
     initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
 ) -> None:
     """
-    Plots the evolution of usage of the browsers given as parameter. 
+    Plot the evolution of usage of the browsers given as parameter. 
     If a initial or final date is given, plots the percentages between them,
     otherwise plots all the data
     """
-    data_filtered: List[Records] = filter_by_date(data, initial_date, final_date)
+    data_filtered: List[Record] = filter_by_date(data, initial_date, final_date)
 
     percentages: List[List[float]] = []
     dates: List[List[dt.date]] = []
@@ -180,7 +174,7 @@ def plot_evolution_browsers_between_dates(
         )
     )
 
-    fig = plt.gcf()
+    fig: plt.Figure = plt.gcf()
     fig.autofmt_xdate()
 
     plt.margins(x=0, y=0)
@@ -189,12 +183,13 @@ def plot_evolution_browsers_between_dates(
     plt.show()
 
 
-def plot_stick_graph(data: List[Records], list_of_browsers: List[str]) -> None:
+def plot_stick_graph(data: List[Record], list_of_browsers: List[str]) -> None:
     """
-    Plots a bar chart with the means of usage of the browsers given as parameter
+    Plot a bar chart with the means of usage 
+    of the browsers given as parameter
     """
     means_of_usage: List[float] = [
-        mean([getattr(record, browser) for record in data])
+        np.mean([getattr(record, browser) for record in data])
         for browser in list_of_browsers
     ]
 
@@ -210,7 +205,8 @@ def filter_dataframe_by_list_of_browsers(
     file: str, list_of_browsers: List[str]
 ) -> pd.DataFrame:
     """
-    Returns a pandas.DataFrame with the percentage of use of the browsers given as parameter
+    Return a pandas.DataFrame with the 
+    percentage of use of the browsers given as parameter
     """
     list_of_browsers.append("Date")
 
@@ -219,11 +215,11 @@ def filter_dataframe_by_list_of_browsers(
     )
 
     outside: List[str] = []
-    records: List[float] = []
+    Record: List[float] = []
 
     for date in list(data_frame.index):
         outside.extend([date] * len(data_frame.columns))
-        records.extend(list(data_frame.loc[date]))
+        Record.extend(list(data_frame.loc[date]))
 
     inside: List[str] = list(data_frame.columns) * len(data_frame)
 
@@ -234,7 +230,7 @@ def filter_dataframe_by_list_of_browsers(
     )
 
     data_frame_with_indexes: pd.DataFrame = pd.DataFrame(
-        data=records, index=hier_index, columns=["Records"]
+        data=Record, index=hier_index, columns=["Record"]
     )
 
     return data_frame_with_indexes
@@ -242,7 +238,8 @@ def filter_dataframe_by_list_of_browsers(
 
 def filter_dataframe_by_importance(file: str, filter_: float = 0.0) -> pd.DataFrame:
     """
-    Returns a pandas.DataFrame with the browsers which mean is greater than the filter given as parameter
+    Return a pandas.DataFrame with the browsers which mean 
+    is greater than the filter given as parameter
     """
     data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
     data_frame_transposed: pd.DataFrame = data_frame.transpose()
@@ -257,7 +254,7 @@ def plot_evolution_browsers_between_dates_with_data_frame(
     final_date: Optional[str] = None,
 ) -> None:
     """
-    Plots a chart with the evolution of usage of the browsers given as parameter
+    Plot a chart with the evolution of usage of the browsers given as parameter.
     """
     list_of_browsers.append("Date")
 
@@ -314,7 +311,9 @@ def plot_evolution_browsers_between_dates_with_data_frame(
 def filter_by_date_and_browser_with_dataframes(
     file: str, date: str, browser: str
 ) -> float:
-    """Returns the percentage of use of a browser on a certain date"""
+    """
+    Return the percentage of use of a browser on a certain date.
+    """
     data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
 
     return data_frame[browser].loc[date]
@@ -324,7 +323,7 @@ def plot_pie_chart(
     file: str, date: Optional[str] = None, *, circle: bool = False
 ) -> None:
     """
-    Plots a simple pie chart.
+    Plot a simple pie chart.
     If circle parameter is set to True, the chart is converted to a circle object
     """
     data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
