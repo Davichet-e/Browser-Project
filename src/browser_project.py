@@ -6,9 +6,9 @@ Created on 20 Jan, 2019
 import csv
 import datetime as dt
 from collections import namedtuple
-import numpy as np
 from typing import Iterator, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
