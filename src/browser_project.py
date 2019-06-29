@@ -208,10 +208,9 @@ def filter_dataframe_by_list_of_browsers(
     Return a pandas.DataFrame with the 
     percentage of use of the browsers given as parameter
     """
-    list_of_browsers.append("Date")
 
     data_frame: pd.DataFrame = pd.read_csv(
-        file, index_col="Date", usecols=list_of_browsers
+        file, index_col="Date", usecols=list_of_browsers + ["Date"]
     )
 
     outside: List[str] = []
@@ -256,10 +255,9 @@ def plot_evolution_browsers_between_dates_with_data_frame(
     """
     Plot a chart with the evolution of usage of the browsers given as parameter.
     """
-    list_of_browsers.append("Date")
 
     data_frame: pd.DataFrame = pd.read_csv(
-        file, index_col="Date", usecols=list_of_browsers, parse_dates=True
+        file, index_col="Date", usecols=list_of_browsers + ["Date"], parse_dates=True
     )
 
     if initial_date is not None and final_date is not None:
