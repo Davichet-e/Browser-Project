@@ -5,7 +5,7 @@ Created on 20 ene. 2019
 """
 from datetime import datetime as dt
 from pprint import pprint
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import pandas as pd
 
@@ -49,12 +49,34 @@ def test_filter_by_browser(data) -> None:
     print()
 
 
-def test_filter_data_frame_by_list_of_browsers(
-    file: str, list_of_browser: list, display_all: bool = False
+def test_dataframe_browsers(
+    file: str,
+    *,
+    type_: int,
+    list_of_browsers: List[str] = None,
+    filter_: float = 0.0,
+    display_all: bool = False,
 ) -> None:
-    data_frame: pd.DataFrame = browser_project.filter_dataframe_by_list_of_browsers(
-        file, list_of_browser
-    )
+    """
+    Since both browser_project.dataframe_browsers and browser_project.dataframe_browsers2 are pretty similar, 
+    if type_ is 1, returns the first function, otherwise, the number 2
+    """
+    data_frame: pd.DataFrame
+
+    if type_ == 1:
+        data_frame = browser_project.dataframe_browsers(file, list_of_browsers, filter_)
+    else:
+        data_frame = browser_project.dataframe_browsers2(
+            file, list_of_browsers, filter_
+        )
+
+    if filter_:
+        print(
+            f"Printing the DataFrame with the browsers which mean is greater than {filter_}\n"
+        )
+    else:
+        print("Printing the DataFrame:\n")
+
     if display_all:
         with pd.option_context("display.max_rows", None, "display.max_columns", None):
             print(data_frame, "\n")
@@ -62,20 +84,33 @@ def test_filter_data_frame_by_list_of_browsers(
         print(data_frame, "\n")
 
 
-def test_filter_data_frame_by_importance(data, filter_) -> None:
-    data_frame: pd.DataFrame = browser_project.filter_dataframe_by_importance(
-        data, filter_
-    )
-    print(
-        f"Printing the DataFrame with the browsers which mean is greater than {filter_}\n"
-    )
-    print(data_frame)
-
-
-def test_filter_by_date_and_browser_with_data_frame(file, date, browser) -> None:
+def test_filter_by_date_and_browser_with_data_frame(
+    file: str, date: str, browser: str
+) -> None:
     print(f"The percentage of use of the browser {browser} on the date {date} is:")
     print(
-        browser_project.filter_by_date_and_browser_with_dataframes(file, date, browser)
+        browser_project.filter_by_date_and_browser_with_dataframes(file, date, browser),
+        "\n",
+    )
+
+
+def test_statistics_metrics_by_browsers(
+    file,
+    list_of_browsers: Optional[List[str]] = None,
+    *,
+    filter_by: Optional[Tuple[str, float]] = None,
+    sort_by: str = "mean",
+    transpose: bool = False,
+) -> None:
+
+    print(
+        browser_project.statistics_metrics_by_browsers(
+            file,
+            list_of_browsers,
+            filter_by=filter_by,
+            sort_by=sort_by,
+            transpose=transpose,
+        )
     )
 
 
@@ -84,9 +119,7 @@ if __name__ == "__main__":
     FILE_2009_to_2019 = "./data/browser-ww-monthly-200901-201902.csv"
     FILE_2017_to_2018 = "./data/browser-ww-monthly-201701-201812.csv"
 
-    records: List[browser_project.Record] = browser_project.read_file(
-        FILE_2009_to_2019
-    )
+    records: List[browser_project.Record] = browser_project.read_file(FILE_2009_to_2019)
 
     pprint(records[:5])
     print()
@@ -105,13 +138,9 @@ if __name__ == "__main__":
         records, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
     )
 
-    test_filter_data_frame_by_list_of_browsers(
-        FILE_2009_to_2019, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
-    )
+    test_dataframe_browsers(FILE_2009_to_2019, type_=2, filter_=5.0)
 
-    test_filter_data_frame_by_importance(FILE_2009_to_2019, 5.0)
-
-    browser_project.plot_evolution_browsers_between_dates_with_data_frame(
+    browser_project.plot_evolution_browsers_use_between_dates_with_data_frame(
         FILE_2009_to_2019, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
     )
 
@@ -120,4 +149,8 @@ if __name__ == "__main__":
     )
 
     browser_project.plot_pie_chart(FILE_2017_to_2018, "2017-02", circle=True)
+
+    test_statistics_metrics_by_browsers(FILE_2017_to_2018)
+
+    browser_project.plot_box_chart(FILE_2009_to_2019, limit=4)
     # ===========================================================================

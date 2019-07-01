@@ -69,35 +69,32 @@ def filter_by_date(
     final_date: Optional[str] = None,
 ) -> List[Record]:
     """
-        INPUT = data: list of tuples with the percentage of use
-        of certain browsers, on a certain date
-        initial_date: Initial date
-        final_date: Final date
-        OUTPUT = LIst of tuples with the browsers between these dates
+    Return the data between the dates given as parameter.
+    If no initial or final date given, returns all data
     """
     result: List[Record] = data
 
     if initial_date is not None and final_date is not None:
         result = [
-            n
-            for n in data
+            record
+            for record in data
             if dt.datetime.strptime(initial_date, "%Y-%m").date()
-            <= n.Date
+            <= record.Date
             <= dt.datetime.strptime(final_date, "%Y-%m").date()
         ]
 
     elif initial_date is not None:
         result = [
-            n
-            for n in data
-            if n.Date <= dt.datetime.strptime(initial_date, "%Y-%m").date()
+            record
+            for record in data
+            if record.Date <= dt.datetime.strptime(initial_date, "%Y-%m").date()
         ]
 
     elif final_date is not None:
         result = [
-            n
-            for n in data
-            if dt.datetime.strptime(final_date, "%Y-%m").date() <= n.Date
+            record
+            for record in data
+            if dt.datetime.strptime(final_date, "%Y-%m").date() <= record.Date
         ]
 
     return result
@@ -121,7 +118,6 @@ def filter_by_browser(data: List[Record], browser: str) -> List[Tuple[dt.date, f
     Return a list with the percentages of use of a browser 
     given as a parameter along with its corresponding dates 
     """
-
     return [(record.Date, getattr(record, browser)) for record in data]
 
 
@@ -201,24 +197,41 @@ def plot_stick_graph(data: List[Record], list_of_browsers: List[str]) -> None:
     plt.show()
 
 
-def filter_dataframe_by_list_of_browsers(
-    file: str, list_of_browsers: List[str]
+def dataframe_browsers(
+    file: str, list_of_browsers: Optional[List[str]] = None, filter_: float = 0.0
 ) -> pd.DataFrame:
     """
     Return a pandas.DataFrame with the 
-    percentage of use of the browsers given as parameter
+    percentage of use of the browsers of the csv file
+    given as parameter, the pandas.DataFrame is grouped
+    hierarchically by date and browsers.
+
+    Parameters
+    ----------
+    list_of_browsers: If given, filter the pandas.DataFrame with them.
+    filter_: If given, filter the pandas.DataFrame with the browsers which mean is greater than it 
+    
+    Cannot specify both list_of_browsers and filter_
     """
+    if filter_ and list_of_browsers:
+        raise ValueError("Cannot specify both list_of_browsers and filter_")
 
     data_frame: pd.DataFrame = pd.read_csv(
-        file, index_col="Date", usecols=list_of_browsers + ["Date"]
+        file,
+        usecols=list_of_browsers + ["Date"] if list_of_browsers else None,
+        index_col="Date",
     )
 
-    outside: List[str] = []
-    Record: List[float] = []
+    data_frame = data_frame[data_frame.columns[data_frame.mean() > filter_]]
 
-    for date in list(data_frame.index):
-        outside.extend([date] * len(data_frame.columns))
-        Record.extend(list(data_frame.loc[date]))
+    outside: List[str] = []
+    data: List[float] = []
+
+    number_of_columns: int = len(data_frame.columns)
+
+    for date in data_frame.index:
+        outside.extend([date] * number_of_columns)
+        data.extend(data_frame.loc[date])
 
     inside: List[str] = list(data_frame.columns) * len(data_frame)
 
@@ -229,28 +242,47 @@ def filter_dataframe_by_list_of_browsers(
     )
 
     data_frame_with_indexes: pd.DataFrame = pd.DataFrame(
-        data=Record, index=hier_index, columns=["Record"]
+        data=data, index=hier_index, columns=["Records"]
     )
 
     return data_frame_with_indexes
 
 
-def filter_dataframe_by_importance(file: str, filter_: float = 0.0) -> pd.DataFrame:
+def dataframe_browsers2(
+    file: str, list_of_browsers: Optional[List[str]] = None, filter_: float = 0.0
+) -> pd.DataFrame:
     """
-    Return a pandas.DataFrame with the browsers which mean 
-    is greater than the filter given as parameter
+    Return a pandas.DataFrame with the 
+    percentage of use of the browsers of the csv file given as parameter.
+    
+    Parameters
+    ----------
+    list_of_browsers: If given, filter the pandas.DataFrame with them.
+    filter_: If given, filter the pandas.DataFrame with the browsers which mean is greater than it
+
+    (The difference between dataframe_browsers and this function is that the first function 
+    group the percentages by the dates and browsers)
     """
-    data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
+    if filter_ and list_of_browsers:
+        raise ValueError("Cannot specify both list_of_browsers and filter_")
+
+    data_frame: pd.DataFrame = pd.read_csv(
+        file,
+        index_col="Date",
+        usecols=list_of_browsers + ["Date"] if list_of_browsers else None,
+    )
     data_frame_transposed: pd.DataFrame = data_frame.transpose()
+
     return data_frame_transposed[data_frame.mean() > filter_]
 
 
-def plot_evolution_browsers_between_dates_with_data_frame(
+def plot_evolution_browsers_use_between_dates_with_data_frame(
     file: str,
     list_of_browsers: List[str],
     *,
     initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
+    fill_between: bool = False,
 ) -> None:
     """
     Plot a chart with the evolution of usage of the browsers given as parameter.
@@ -278,29 +310,25 @@ def plot_evolution_browsers_between_dates_with_data_frame(
 
         data_frame = data_frame[data_frame.index <= _final_date]
 
-    data_frame.plot(
-        legend=True,
-        grid=True,
-        colormap="inferno",
-        title="Evolution of browser/s usage",
-        marker="o",
-        markerfacecolor="red",
-        markersize=2,
-    )
-    for browser in data_frame:
+    sns.lineplot(data=data_frame, palette="bright")
 
-        plt.fill_between(
-            data_frame.index, data_frame[browser], alpha=0.3, interpolate=True
-        )
+    if fill_between:
+        for browser in data_frame:
+
+            plt.fill_between(
+                data_frame.index, data_frame[browser], alpha=0.3, interpolate=True
+            )
 
     plt.title(
         (
-            f"Evolution of browser usage between {dt.datetime.strftime(data_frame.index[0], '%b, %Y')} "
-            f"and {dt.datetime.strftime(data_frame.index[-1], '%b, %Y')}"
+            f"Evolution of browser usage between {dt.datetime.strftime(data_frame.index[0], '%b, %Y')}"
+            f" and {dt.datetime.strftime(data_frame.index[-1], '%b, %Y')}"
         )
     )
     plt.xlabel("Dates")
     plt.ylabel("Percentage of use")
+
+    plt.margins(x=0, y=0)
 
     plt.tight_layout()
     plt.show()
@@ -314,29 +342,36 @@ def filter_by_date_and_browser_with_dataframes(
     """
     data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
 
-    return data_frame[browser].loc[date]
+    return data_frame.loc[date, browser]
 
 
 def plot_pie_chart(
     file: str, date: Optional[str] = None, *, circle: bool = False
 ) -> None:
     """
-    Plot a simple pie chart.
-    If circle parameter is set to True, the chart is converted to a circle object
+    Plot a simple pie chart with the means of the browsers usage,
+
+    Parameters
+    ----------
+
+    file: String, CSV file containing the browsers use percentage
+    date: String, if given, plot the registers of that date.
+    circle: Boolean, if set to True, the chart is converted to a circle object, default is False
     """
     data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
 
-    data: pd.Series = data_frame.mean() if date is None else data_frame.loc[date]
-    data_filtered: pd.Series = data[data > 1.0]
+    data: pd.Series = data_frame.loc[date] if date else data_frame.mean()
+    data = data[data > 1.0]  # Get only the browsers with significant percentage
 
-    data_filtered["Other"] = 100 - sum(data_filtered)
+    data["Other"] = 100 - sum(data)
+    # Group the remaining percentage in another column
 
-    data_filtered.sort_values(ascending=False, inplace=True)
+    data.sort_values(ascending=False, inplace=True)
 
-    explodes: Tuple[float, ...] = (0.1,) + (0.0,) * (len(data_filtered) - 1)
+    explodes: Tuple[float, ...] = (0.1,) + (0.0,) * (len(data) - 1)
     plt.pie(
-        data_filtered,
-        labels=data_filtered.index,
+        data,
+        labels=data.index,
         explode=explodes,
         shadow=True,
         autopct="%1.2f%%",
@@ -350,4 +385,80 @@ def plot_pie_chart(
         axes.add_artist(centre_circle)
 
     plt.tight_layout()
+    plt.show()
+
+
+def statistics_metrics_by_browsers(
+    file: str,
+    list_of_browsers: Optional[List[str]] = None,
+    *,
+    filter_by: Optional[Tuple[str, float]] = None,
+    sort_by: str = "mean",
+    transpose: bool = False,
+) -> pd.DataFrame:
+    """
+    Return a pandas.DataFrame consinsting of statistics metrics.
+
+    Parameters
+    ----------
+
+    file: CSV file with the percentages of use\n
+
+    list_of_browsers: List of str, if given, filter the pandas.DataFrame with the browsers in it\n
+
+    filter_by: Tuple of a str and a float, first element refere to the statistic
+    function that must be greater than the second element. If given, filters by the browsers
+    which accomplish the condition mentioned before\n
+
+    sort_by: String, it should refere to a statistic function. If given, 
+    sort the pandas.DataFrame by it. Default is 'mean'\n
+
+    transpose: Boolean, if set to True, returns the pandas.DataFrame transposed. Default is False.
+    """
+
+    if list_of_browsers and filter_by:
+        raise ValueError("Cannot specify both list_of_browsers and filter_by")
+
+    data_frame: pd.DataFrame = dataframe_browsers(file, list_of_browsers).groupby(
+        "Browsers"
+    ).describe().sort_values(by=("Records", sort_by), ascending=False)
+
+    if filter_by:
+        data_frame = data_frame[data_frame[("Records", filter_by[0])] > filter_by[1]]
+
+    if transpose:
+        return data_frame.transpose().round(2)
+
+    return data_frame
+
+
+def plot_box_chart(
+    file: str, list_of_browsers: Optional[List[str]] = None, limit: Optional[int] = None
+) -> None:
+    """
+    Plot box chart
+
+    Parameters
+    ----------
+    file: CSV file with the percentages of use.\n
+    
+    list_of_browsers: List of strings, if given, 
+    filter the pandas.DataFrame with the browsers in it.\n
+    
+    limit: Integer, if given, plots only the boxplot of the first n browsers.
+    """
+    if list_of_browsers and limit:
+        raise ValueError("Cannot specify both list_of_browsers and limit")
+
+    data_frame: pd.DataFrame = pd.read_csv(file, index_col="Date")
+
+    if list_of_browsers:
+        sns.boxplot(data=data_frame[list_of_browsers])
+
+    elif limit:
+        sns.boxplot(data=data_frame.iloc[:, :limit])
+
+    else:
+        sns.boxplot(data=data_frame)
+
     plt.show()
