@@ -197,7 +197,7 @@ def plot_stick_graph(data: List[Record], list_of_browsers: List[str]) -> None:
     plt.show()
 
 
-def dataframe_browsers(
+def dataframe_browsers_grouped_hierarchically(
     file: str, list_of_browsers: Optional[List[str]] = None, filter_: float = 0.0
 ) -> pd.DataFrame:
     """
@@ -419,7 +419,7 @@ def statistics_metrics_by_browsers(
     if list_of_browsers and filter_by:
         raise ValueError("Cannot specify both list_of_browsers and filter_by")
 
-    data_frame: pd.DataFrame = dataframe_browsers(file, list_of_browsers).groupby(
+    data_frame: pd.DataFrame = dataframe_browsers_grouped_hierarchically(file, list_of_browsers).groupby(
         "Browsers"
     ).describe().sort_values(by=("Records", sort_by), ascending=False)
 
