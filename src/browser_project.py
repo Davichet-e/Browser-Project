@@ -248,7 +248,7 @@ def dataframe_browsers_grouped_hierarchically(
     return data_frame_with_indexes
 
 
-def dataframe_browsers2(
+def dataframe_browsers(
     file: str, list_of_browsers: Optional[List[str]] = None, filter_: float = 0.0
 ) -> pd.DataFrame:
     """
@@ -419,9 +419,11 @@ def statistics_metrics_by_browsers(
     if list_of_browsers and filter_by:
         raise ValueError("Cannot specify both list_of_browsers and filter_by")
 
-    data_frame: pd.DataFrame = dataframe_browsers_grouped_hierarchically(file, list_of_browsers).groupby(
-        "Browsers"
-    ).describe().sort_values(by=("Records", sort_by), ascending=False)
+    data_frame: pd.DataFrame = dataframe_browsers_grouped_hierarchically(
+        file, list_of_browsers
+    ).groupby("Browsers").describe().sort_values(
+        by=("Records", sort_by), ascending=False
+    )
 
     if filter_by:
         data_frame = data_frame[data_frame[("Records", filter_by[0])] > filter_by[1]]

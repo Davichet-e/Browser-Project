@@ -64,9 +64,9 @@ def test_dataframe_browsers(
     data_frame: pd.DataFrame
 
     if type_ == 1:
-        data_frame = browser_project.dataframe_browsers(file, list_of_browsers, filter_)
+        data_frame = browser_project.dataframe_browsers_grouped_hierarchically(file, list_of_browsers, filter_)
     else:
-        data_frame = browser_project.dataframe_browsers2(
+        data_frame = browser_project.dataframe_browsers(
             file, list_of_browsers, filter_
         )
 
