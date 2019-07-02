@@ -22,16 +22,11 @@ plt.style.use("bmh")
 def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
     """Check the fields of the namedtuple and changes the invalid ones."""
 
-    def starts_with_number(string: str) -> bool:
-        if string[0].isdigit():
-            return True
-        return False
-
     fields_fixed: List[str] = []
     for field in fields:
         field = field.replace(" ", "_")
-        if starts_with_number(field):
-            field = f"c{field}"
+        if field[0].isdigit():
+            field = f"n{field}"
         fields_fixed.append(field)
 
     return namedtuple(name, fields_fixed)
