@@ -23,16 +23,21 @@ def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
     """Check the fields of the namedtuple and changes the invalid ones."""
 
     fields_fixed: List[str] = []
+
     for field in fields:
         field = field.replace(" ", "_")
+
         if field[0].isdigit():
             field = f"n{field}"
+
         fields_fixed.append(field)
 
     return namedtuple(name, fields_fixed)
 
 
-Record: namedtuple = namedtuple("Empty_namedtuple", "abc")
+Record: namedtuple = namedtuple("Empty_namedtuple", "")
+# Empty namedtuple. When 'read_file' is executed,
+# turns to a namedtuple fixed to the file containing the browsers' names
 
 
 def read_file(file: str) -> List["Record"]:
@@ -160,8 +165,8 @@ def plot_evolution_browsers_between_dates(
     plt.xlabel("Dates")
     plt.title(
         (
-            f"Evolution of browser usage between {dt.datetime.strftime(dates[0][0], '%b-%Y')} "
-            f"and {dt.datetime.strftime(dates[0][-1], '%b-%Y')}"
+            f"Evolution of browser usage between {dates[0][0]: '%b-%Y'} "
+            f"and {dates[0][-1]: '%b-%Y'}"
         )
     )
 
@@ -264,7 +269,7 @@ def dataframe_browsers(
     data_frame: pd.DataFrame = pd.read_csv(
         file,
         index_col="Date",
-        usecols=list_of_browsers + ["Date"] if list_of_browsers else None,
+        usecols=(list_of_browsers + ["Date"]) if list_of_browsers else None,
     )
     data_frame_transposed: pd.DataFrame = data_frame.transpose()
 
@@ -288,22 +293,25 @@ def plot_evolution_browsers_use_between_dates_with_data_frame(
     )
 
     if initial_date is not None and final_date is not None:
-        _initial_date: dt.date = dt.datetime.strptime(initial_date, "%Y-%m")
-        _final_date: dt.date = dt.datetime.strptime(final_date, "%Y-%m")
+        initial_date_as_datetime: dt.datetime = dt.datetime.strptime(
+            initial_date, "%Y-%m"
+        )
+        final_date_as_datetime: dt.datetime = dt.datetime.strptime(final_date, "%Y-%m")
 
         data_frame = data_frame[
-            (_initial_date <= data_frame.index) & (data_frame.index <= _final_date)
+            (initial_date_as_datetime <= data_frame.index)
+            & (data_frame.index <= final_date_as_datetime)
         ]
 
     elif initial_date is not None:
-        _initial_date = dt.datetime.strptime(initial_date, "%Y-%m")
+        initial_date_as_datetime = dt.datetime.strptime(initial_date, "%Y-%m")
 
-        data_frame = data_frame[_initial_date <= data_frame.index]
+        data_frame = data_frame[initial_date_as_datetime <= data_frame.index]
 
     elif final_date is not None:
-        _final_date = dt.datetime.strptime(final_date, "%Y-%m")
+        final_date_as_datetime = dt.datetime.strptime(final_date, "%Y-%m")
 
-        data_frame = data_frame[data_frame.index <= _final_date]
+        data_frame = data_frame[data_frame.index <= final_date_as_datetime]
 
     sns.lineplot(data=data_frame, palette="bright")
 
@@ -316,8 +324,8 @@ def plot_evolution_browsers_use_between_dates_with_data_frame(
 
     plt.title(
         (
-            f"Evolution of browser usage between {dt.datetime.strftime(data_frame.index[0], '%b, %Y')}"
-            f" and {dt.datetime.strftime(data_frame.index[-1], '%b, %Y')}"
+            f"Evolution of browser usage between {data_frame.index[0]: '%b, %Y'}"
+            f" and {data_frame.index[-1]: '%b, %Y'}"
         )
     )
     plt.xlabel("Dates")
@@ -388,7 +396,7 @@ def statistics_metrics_by_browsers(
     list_of_browsers: Optional[List[str]] = None,
     *,
     filter_by: Optional[Tuple[str, float]] = None,
-    sort_by: str = "mean",
+    sort_by_statistic_func: str = "mean",
     transpose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -402,10 +410,10 @@ def statistics_metrics_by_browsers(
     list_of_browsers: List of str, if given, filter the pandas.DataFrame with the browsers in it\n
 
     filter_by: Tuple of a str and a float, first element refere to the statistic
-    function that must be greater than the second element. If given, filters by the browsers
+    function that must be greater than the second one. If given, filters by the browsers
     which accomplish the condition mentioned before\n
 
-    sort_by: String, it should refere to a statistic function. If given, 
+    sort_by: String, it should refere to a statistic function. If given,
     sort the pandas.DataFrame by it. Default is 'mean'\n
 
     transpose: Boolean, if set to True, returns the pandas.DataFrame transposed. Default is False.
@@ -417,7 +425,7 @@ def statistics_metrics_by_browsers(
     data_frame: pd.DataFrame = dataframe_browsers_grouped_hierarchically(
         file, list_of_browsers
     ).groupby("Browsers").describe().sort_values(
-        by=("Records", sort_by), ascending=False
+        by=("Records", sort_by_statistic_func), ascending=False
     )
 
     if filter_by:

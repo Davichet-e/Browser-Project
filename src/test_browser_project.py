@@ -117,7 +117,7 @@ def test_statistics_metrics_by_browsers(
             file,
             list_of_browsers,
             filter_by=filter_by,
-            sort_by=sort_by,
+            sort_by_statistic_func=sort_by,
             transpose=transpose,
         )
     )
