@@ -17,6 +17,7 @@ def test_filter_by_date(
     data: List[Record],
     initial_date: Optional[str] = None,
     final_date: Optional[str] = None,
+    up_to: Optional[int] = None,
 ) -> None:
 
     result: List[Record] = browser_project.filter_by_date(
@@ -30,7 +31,7 @@ def test_filter_by_date(
         print(f"Printing records before {final_date}:")
     else:
         print(f"Browser records between {initial_date} and {final_date}:")
-    pprint(result)
+    pprint(result[:up_to])
     print()
 
 
@@ -46,13 +47,15 @@ def test_filter_by_date_and_browser(
     )
 
 
-def test_filter_by_browser(data: List[Record], browser: str) -> None:
+def test_filter_by_browser(
+    data: List[Record], browser: str, up_to: Optional[int] = None
+) -> None:
 
     result: List[Tuple[dt.date, float]] = browser_project.filter_by_browser(
         data, browser
     )
     print(f"Printing the percentages of use of the browser {browser}:")
-    pprint(result)
+    pprint(result[:up_to])
     print()
 
 
@@ -133,11 +136,11 @@ if __name__ == "__main__":
     pprint(records[:5])
     print()
 
-    test_filter_by_date(records, initial_date="2016-11")
+    test_filter_by_date(records, initial_date="2016-11", final_date="2017-9", up_to=10)
 
     test_filter_by_date_and_browser(records, "2015-07", "Safari")
 
-    test_filter_by_browser(records, "IE")
+    test_filter_by_browser(records, "IE", up_to=10)
 
     browser_project.plot_evolution_browsers_between_dates(
         records, ["Chrome", "Firefox", "Edge", "Safari", "IE"], initial_date="2013-05"
@@ -147,7 +150,7 @@ if __name__ == "__main__":
         records, ["Chrome", "Firefox", "Edge", "Safari", "IE"]
     )
 
-    test_dataframe_browsers(FILE_2009_TO_2019, type_=2, filter_=5.0)
+    test_dataframe_browsers(FILE_2009_TO_2019, type_=1, filter_=5.0)
 
     browser_project.plot_evolution_browsers_use_between_dates_with_data_frame(
         FILE_2009_TO_2019, ["Chrome", "Firefox", "Edge", "Safari", "IE"]

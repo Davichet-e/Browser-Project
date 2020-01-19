@@ -5,8 +5,7 @@ Created on 20 Jan, 2019
 """
 import csv
 import datetime as dt
-from collections import namedtuple
-from typing import Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, NamedTuple, Optional, Tuple, Type
 
 import numpy as np
 import pandas as pd
@@ -19,10 +18,10 @@ pd.plotting.register_matplotlib_converters()
 plt.style.use("bmh")
 
 
-def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
+def namedtuple_fixed(name: str, fields: List[str]) -> NamedTuple:
     """Check the fields of the namedtuple and changes the invalid ones."""
 
-    fields_fixed: List[str] = []
+    fields_fixed: Dict[str, type] = {}
 
     for field in fields:
         field = field.replace(" ", "_")
@@ -30,17 +29,21 @@ def namedtuple_fixed(name: str, fields: List[str]) -> namedtuple:
         if field[0].isdigit():
             field = f"n{field}"
 
-        fields_fixed.append(field)
+        fields_fixed[field] = float
+    
+    fields_fixed["Date"] = dt.date
+    
 
-    return namedtuple(name, fields_fixed)
+
+    return NamedTuple(name, **fields_fixed)
 
 
-Record: namedtuple = namedtuple("Empty_namedtuple", "")
+Record: NamedTuple = NamedTuple("Empty", a=int)
 # Empty namedtuple. When 'read_file' is executed,
 # turns to a namedtuple fixed to the file containing the browsers' names
 
-
-def read_file(file: str) -> List["Record"]:
+# pylint: disable=used-prior-global-declaration, not-callable
+def read_file(file: str) -> "List[Record]":
     """
     Read the file with info about the percentage of use of various browsers
     """
@@ -218,22 +221,22 @@ def dataframe_browsers_grouped_hierarchically(
 
     data_frame: pd.DataFrame = pd.read_csv(
         file,
-        usecols=list_of_browsers + ["Date"] if list_of_browsers else None,
+        usecols=(list_of_browsers + ["Date"]) if list_of_browsers else None,
         index_col="Date",
     )
 
     data_frame = data_frame[data_frame.columns[data_frame.mean() > filter_]]
 
+    data_frame_columns: pd.Index = data_frame.columns
+
     outside: List[str] = []
     data: List[float] = []
 
-    number_of_columns: int = len(data_frame.columns)
-
     for date in data_frame.index:
-        outside.extend([date] * number_of_columns)
+        outside.extend([date] * len(data_frame_columns))
         data.extend(data_frame.loc[date])
 
-    inside: List[str] = list(data_frame.columns) * len(data_frame)
+    inside: List[str] = data_frame_columns.to_list() * len(data_frame)
 
     assert len(inside) == len(outside)
 
